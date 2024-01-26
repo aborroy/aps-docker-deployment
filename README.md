@@ -29,4 +29,6 @@ APS Admin:
 
 ## Additional resources
 
-Explore the [Alfresco Process Services SDK](https://github.com/OpenPj/alfresco-process-services-project-sdk) for additional information.
+This project provides a basic structure to deploy APS (mainly oriented to testing purposes). Explore the resources provided by @OpenPj for a more comprehensive understanding:
+* [APS Docker Deployment](https://github.com/OpenPj/alfresco-process-services-docker-deployment) for deployment
+* [Alfresco Process Services SDK](https://github.com/OpenPj/alfresco-process-services-project-sdk) for development
