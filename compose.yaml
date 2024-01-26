@@ -1,0 +1,56 @@
+version: "2"
+
+services:
+
+  # http://localhost:9090/activiti-app
+  # Credentials: admin@app.activiti.com / admin
+  activiti:
+      image: alfresco/process-services:${PROCESS_SERVICES_TAG}
+      mem_limit: 1500m
+      depends_on:
+          -  pgactiviti
+      environment:
+          JAVA_OPTS: " -Xms256m -Xmx1024m"
+          ACTIVITI_DATASOURCE_URL: "jdbc:postgresql://pgactiviti:5432/activiti"
+          ACTIVITI_DATASOURCE_DRIVER: "org.postgresql.Driver"
+          ACTIVITI_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+          ACTIVITI_CSRF_DISABLED: "true"
+          ACTIVITI_REVIEW_WORKFLOWS_ENABLED: "true"
+      volumes:
+          - ./license/activiti.lic:/usr/local/tomcat/lib/activiti.lic:ro
+      ports:
+          - 9090:8080
+
+  # http://localhost:9091/activiti-admin
+  # Credentials: admin / admin
+  activiti-admin:
+      image: alfresco/process-services-admin:${PROCESS_SERVICES_ADMIN_TAG}
+      mem_limit: 600m
+      depends_on:
+          - pgactiviti
+      environment:
+          JAVA_OPTS: " -Xms256m -Xmx512m"
+          ACTIVITI_ADMIN_DATASOURCE_URL:  "jdbc:postgresql://pgactiviti:5432/activitiadmin"
+          ACTIVITI_DATASOURCE_DRIVER: "org.postgresql.Driver"
+          ACTIVITI_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
+          ACTIVITI_ADMIN_REST_APP_HOST: "http://activiti"
+          ACTIVITI_ADMIN_REST_APP_PORT: 8080
+      ports:
+          - 9091:8080
+
+  pgactiviti:
+      image: postgres:${POSTGRES_TAG}
+      mem_limit: 512m
+      environment:
+          - POSTGRES_PASSWORD=alfresco
+          - POSTGRES_USER=alfresco
+          - POSTGRES_DB=activiti
+      command: postgres -c max_connections=300 -c log_min_messages=LOG
+      volumes:
+          - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+          - postgres-activiti-data:/var/lib/postgresql/data
+
+# Persistent storage
+volumes:
+  activemq-data:
+  postgres-activiti-data:
