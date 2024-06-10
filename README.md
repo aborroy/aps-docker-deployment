@@ -37,15 +37,15 @@ Build APS applications for AARCH64:
 docker buildx create --name buildx-multi-arch --use --bootstrap
 
 cd activiti-app
-docker buildx build
--builder=buildx-multi-arch \
+docker buildx build \
+--builder=buildx-multi-arch \
 --platform=linux/arm64 \
 --build-arg PROCESS_SERVICES_VERSION=24.2.0 \
 --tag=alfresco/process-services-aarch64:24.2.0 .
 
 cd activiti-admin
-docker buildx build
--builder=buildx-multi-arch \
+docker buildx build \
+--builder=buildx-multi-arch \
 --platform=linux/arm64 \
 --build-arg PROCESS_SERVICES_VERSION=24.2.0 \
 --tag=alfresco/process-services-admin-aarch64:24.2.0 .
