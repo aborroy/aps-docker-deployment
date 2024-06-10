@@ -1,56 +1,105 @@
-version: "2"
-
 services:
+  # http://localhost:9090/activiti-app - admin@app.activiti.com/admin
+  process:
+    image: ${PROCESS_SERVICES_IMAGE}:${PROCESS_SERVICES_TAG}
+    environment:
+      ACTIVITI_DATASOURCE_USERNAME: alfresco
+      ACTIVITI_DATASOURCE_PASSWORD: alfresco
+      ACTIVITI_DATASOURCE_DRIVER: org.postgresql.Driver
+      ACTIVITI_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      ACTIVITI_DATASOURCE_URL: 'jdbc:postgresql://postgres-aps:5432/activiti?characterEncoding=UTF-8'
+      ACTIVITI_CSRF_DISABLED: 'true'
+      ACTIVITI_CORS_ENABLED: 'true'
+      ACTIVITI_ES_SERVER_TYPE: rest
+      ACTIVITI_ES_REST_CLIENT_ADDRESS: elasticsearch
+      ACTIVITI_ES_REST_CLIENT_PORT: 9200
+      ACTIVITI_ES_REST_CLIENT_SCHEMA: http
+      JAVA_OPTS: ' -Xms1g -Xmx2g'
+    ports:
+      - 9090:8080
+    depends_on:
+      postgres-aps:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./license/activiti.lic:/usr/local/tomcat/lib/activiti.lic:ro
+      - aps-contentstore-volume:/act_data
 
-  # http://localhost:9090/activiti-app
-  # Credentials: admin@app.activiti.com / admin
-  activiti:
-      image: alfresco/process-services:${PROCESS_SERVICES_TAG}
-      mem_limit: 1500m
-      depends_on:
-          -  pgactiviti
-      environment:
-          JAVA_OPTS: " -Xms256m -Xmx1024m"
-          ACTIVITI_DATASOURCE_URL: "jdbc:postgresql://pgactiviti:5432/activiti"
-          ACTIVITI_DATASOURCE_DRIVER: "org.postgresql.Driver"
-          ACTIVITI_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
-          ACTIVITI_CSRF_DISABLED: "true"
-          ACTIVITI_REVIEW_WORKFLOWS_ENABLED: "true"
-      volumes:
-          - ./license/activiti.lic:/usr/local/tomcat/lib/activiti.lic:ro
-      ports:
-          - 9090:8080
+  # http://localhost:9091/activiti-admin - admin/admin
+  process-admin:
+    image: ${PROCESS_SERVICES_ADMIN_IMAGE}:${PROCESS_SERVICES_ADMIN_TAG}
+    environment:
+      ACTIVITI_DATASOURCE_USERNAME: alfresco
+      ACTIVITI_DATASOURCE_PASSWORD: alfresco
+      ACTIVITI_DATASOURCE_DRIVER: org.postgresql.Driver
+      ACTIVITI_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      ACTIVITI_DATASOURCE_URL: 'jdbc:postgresql://postgres-aps-admin:5432/activiti_admin?characterEncoding=UTF-8'
+      ACTIVITI_ADMIN_REST_APP_HOST: "http://process"
+      ACTIVITI_ADMIN_REST_APP_PORT: 8080
+      JAVA_OPTS: ' -Xms512m -Xmx1g'
+    ports:
+      - 9091:8080
+    depends_on:
+      postgres-aps-admin:
+        condition: service_healthy
 
-  # http://localhost:9091/activiti-admin
-  # Credentials: admin / admin
-  activiti-admin:
-      image: alfresco/process-services-admin:${PROCESS_SERVICES_ADMIN_TAG}
-      mem_limit: 600m
-      depends_on:
-          - pgactiviti
-      environment:
-          JAVA_OPTS: " -Xms256m -Xmx512m"
-          ACTIVITI_ADMIN_DATASOURCE_URL:  "jdbc:postgresql://pgactiviti:5432/activitiadmin"
-          ACTIVITI_DATASOURCE_DRIVER: "org.postgresql.Driver"
-          ACTIVITI_HIBERNATE_DIALECT: "org.hibernate.dialect.PostgreSQLDialect"
-          ACTIVITI_ADMIN_REST_APP_HOST: "http://activiti"
-          ACTIVITI_ADMIN_REST_APP_PORT: 8080
-      ports:
-          - 9091:8080
+  elasticsearch:
+    image: elasticsearch:${ELASTICSEARCH_TAG}
+    container_name: elasticsearch
+    environment:
+      xpack.security.enabled: false
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms512m -Xmx1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - aps-es-volume:/usr/share/elasticsearch/data
 
-  pgactiviti:
-      image: postgres:${POSTGRES_TAG}
-      mem_limit: 512m
-      environment:
-          - POSTGRES_PASSWORD=alfresco
-          - POSTGRES_USER=alfresco
-          - POSTGRES_DB=activiti
-      command: postgres -c max_connections=300 -c log_min_messages=LOG
-      volumes:
-          - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-          - postgres-activiti-data:/var/lib/postgresql/data
+  postgres-aps:
+    image: postgres:${POSTGRES_TAG}
+    environment:
+      POSTGRES_DB: activiti
+      POSTGRES_USER: alfresco
+      POSTGRES_PASSWORD: alfresco
+    command: postgres -c max_connections=300 -c log_min_messages=LOG
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alfresco -d activiti"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - aps-db-volume:/var/lib/postgresql/data
 
-# Persistent storage
+  postgres-aps-admin:
+    image: postgres:${POSTGRES_TAG}
+    environment:
+      POSTGRES_DB: activiti_admin
+      POSTGRES_USER: alfresco
+      POSTGRES_PASSWORD: alfresco
+    command: postgres -c max_connections=300 -c log_min_messages=LOG
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alfresco -d activiti_admin"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - aps-admin-db-volume:/var/lib/postgresql/data
+
 volumes:
-  activemq-data:
-  postgres-activiti-data:
+  aps-db-volume:
+  aps-admin-db-volume:
+  aps-contentstore-volume:
+  aps-es-volume:

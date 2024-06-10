@@ -27,6 +27,33 @@ APS Admin:
 * Credentials: admin / admin
 
 
+## Running for AARCH64
+
+When running this Docker Compose in Mac with Apple Silicon chip, apply following steps:
+
+Build APS applications for AARCH64:
+
+```
+cd activiti-app
+docker build . --build-arg PROCESS_SERVICES_VERSION=24.2.0 -t alfresco/process-services-aarch64:24.2.0
+
+cd activiti-admin
+docker build . --build-arg PROCESS_SERVICES_VERSION=24.2.0 -t alfresco/process-services-admin-aarch64:24.2.0
+```
+
+Modify `.env` file to use Docker Images build:
+
+```
+PROCESS_SERVICES_IMAGE=alfresco/process-services-aarch64
+PROCESS_SERVICES_ADMIN_IMAGE=alfresco/process-services-admin-aarch64
+```
+
+Start Docker Compose with the regular command:
+
+```
+docker-compose up --build --force-recreate
+```
+
 ## Additional resources
 
 This project provides a basic structure to deploy APS (mainly oriented to testing purposes). Explore the resources provided by @OpenPj for a more comprehensive understanding:
