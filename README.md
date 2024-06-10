@@ -34,11 +34,21 @@ When running this Docker Compose in Mac with Apple Silicon chip, apply following
 Build APS applications for AARCH64:
 
 ```
+docker buildx create --name buildx-multi-arch --use --bootstrap
+
 cd activiti-app
-docker build . --build-arg PROCESS_SERVICES_VERSION=24.2.0 -t alfresco/process-services-aarch64:24.2.0
+docker buildx build
+-builder=buildx-multi-arch \
+--platform=linux/arm64 \
+--build-arg PROCESS_SERVICES_VERSION=24.2.0 \
+--tag=alfresco/process-services-aarch64:24.2.0 .
 
 cd activiti-admin
-docker build . --build-arg PROCESS_SERVICES_VERSION=24.2.0 -t alfresco/process-services-admin-aarch64:24.2.0
+docker buildx build
+-builder=buildx-multi-arch \
+--platform=linux/arm64 \
+--build-arg PROCESS_SERVICES_VERSION=24.2.0 \
+--tag=alfresco/process-services-admin-aarch64:24.2.0 .
 ```
 
 Modify `.env` file to use Docker Images build:
