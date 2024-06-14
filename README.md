@@ -38,6 +38,7 @@ docker buildx create --name buildx-multi-arch --use --bootstrap
 
 cd activiti-app
 docker buildx build \
+--load \
 --builder=buildx-multi-arch \
 --platform=linux/arm64 \
 --build-arg PROCESS_SERVICES_VERSION=24.2.0 \
@@ -45,6 +46,7 @@ docker buildx build \
 
 cd activiti-admin
 docker buildx build \
+--load \
 --builder=buildx-multi-arch \
 --platform=linux/arm64 \
 --build-arg PROCESS_SERVICES_VERSION=24.2.0 \
