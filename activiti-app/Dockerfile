@@ -5,6 +5,8 @@ FROM alfresco/alfresco-base-tomcat:tomcat10-jre17-rockylinux9
 ARG USERNAME=alfresco
 ARG USERID=33007
 
+USER root
+
 RUN set -x \
    && useradd \
         -c "Alfresco APS" \
